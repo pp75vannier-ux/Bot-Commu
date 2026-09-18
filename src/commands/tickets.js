@@ -7,211 +7,243 @@ const {
   ChannelType
 } = require('discord.js');
 
-const db = require('../database');
 const config = require('../config.json');
+const db = require('../database');
 
 const CATEGORY = 'Tickets';
 
+/*
+============================================================
+                  CONFIGURATION DU PANEL
+============================================================
+Modifie uniquement cette partie.
+============================================================
+*/
+
+const TICKET_CONFIG = {
+
+  // ----------------------------------------------------------
+  // PANEL
+  // ----------------------------------------------------------
+
+  panel: {
+    title: '🗄️ Voici le Panel Ticket ',
+
+    description:
+      'Sélectionnez le type de ticket que vous souhaitez ouvrir.',
+
+    color: '#5865F2'
+  },
+
+
+  // ----------------------------------------------------------
+  // CATEGORIES DISCORD
+  // ----------------------------------------------------------
+  // Mets ici les IDs de tes catégories Discord.
+  // Exemple :
+  // support: '123456789012345678'
+  //
+  // Pour obtenir un ID :
+  // Discord > Paramètres > Avancé > Mode développeur
+  // Puis clic droit sur la catégorie > Copier l'identifiant
+  // ----------------------------------------------------------
+
+  categories: {
+
+    support: '1550511724866572368',
+
+    dons: '1550511961349955584',
+
+    partenariat: '1550512061052878909',
+
+    signalement: '1550512124508381385'
+
+  },
+
+
+  // ----------------------------------------------------------
+  // TYPES DE TICKETS
+  // ----------------------------------------------------------
+  // Tu peux modifier le nom, la description et l'emoji.
+  // ----------------------------------------------------------
+
+  types: {
+
+    support: {
+      label: 'Support',
+      description: 'Besoin d’aide ou problème',
+      emoji: '🛠️',
+      prefix: 'support'
+    },
+
+    dons: {
+      label: 'DONS',
+      description: 'Par ici pour les dons (les dons ne sont pas obligatoires)',
+      emoji: '💰',
+      prefix: 'Dons'
+    },
+
+    partenariat: {
+      label: 'Partenariat',
+      description: 'Demande de partenariat',
+      emoji: '🤝',
+      prefix: 'partenariat'
+    },
+
+    signalement: {
+      label: 'Signalement',
+      description: 'Signaler un problème',
+      emoji: '🚨',
+      prefix: 'signalement'
+    }
+
+  }
+
+};
+
+
+/*
+============================================================
+                    COMMANDES
+============================================================
+*/
+
 module.exports = [
 
-  // ============================================================
-  // /ticket-panel
-  // ============================================================
+  /*
+  ============================================================
+                    /ticket-panel
+  ============================================================
+  */
 
   {
     category: CATEGORY,
 
     data: new SlashCommandBuilder()
       .setName('ticket-panel')
-      .setDescription('[Admin] Créer le panneau de création de tickets')
-      .addStringOption(option =>
-        option
-          .setName('titre')
-          .setDescription('Titre du panneau')
+      .setDescription(
+        '[Admin] Créer le panneau de tickets'
       )
-      .addStringOption(option =>
-        option
-          .setName('description')
-          .setDescription('Description du panneau')
-      )
+
       .setDefaultMemberPermissions(
         PermissionFlagsBits.ManageGuild
       ),
 
     async execute(interaction) {
 
-      const title =
-        interaction.options.getString('titre') ||
-        '🎫 Support';
+      const panel =
+        TICKET_CONFIG.panel;
 
-      const description =
-        interaction.options.getString('description') ||
-        'Sélectionnez le type de ticket que vous souhaitez ouvrir.';
 
-      const embed = new EmbedBuilder()
-        .setColor(config.embedColor)
-        .setTitle(title)
-        .setDescription(description);
+      /*
+      ----------------------------------------------------------
+      EMBED
+      ----------------------------------------------------------
+      */
 
-      // ========================================================
-      // MENU DE SELECTION
-      // ========================================================
+      const embed =
+        new EmbedBuilder()
+          .setColor(panel.color)
+          .setTitle(panel.title)
+          .setDescription(panel.description);
 
-      const menu = new StringSelectMenuBuilder()
-        .setCustomId('ticket_category')
-        .setPlaceholder('🎫 Sélectionnez votre type de ticket')
-        .addOptions([
-          {
-            label: 'Support',
-            description: 'Besoin d’aide ou problème',
-            value: 'support',
-            emoji: '🛠️'
-          },
-          {
-            label: 'Achat',
-            description: 'Question concernant un achat',
-            value: 'achat',
-            emoji: '💰'
-          },
-          {
-            label: 'Partenariat',
-            description: 'Demande de partenariat',
-            value: 'partenariat',
-            emoji: '🤝'
-          },
-          {
-            label: 'Signalement',
-            description: 'Signaler un problème',
-            value: 'signalement',
-            emoji: '🚨'
-          }
-        ]);
 
-      const row = new ActionRowBuilder()
-        .addComponents(menu);
+      /*
+      ----------------------------------------------------------
+      MENU DE SELECTION
+      ----------------------------------------------------------
+      */
+
+      const menu =
+        new StringSelectMenuBuilder()
+          .setCustomId('ticket_category')
+          .setPlaceholder(
+            '🎫 Sélectionnez votre type de ticket'
+          )
+          .addOptions(
+
+            Object.entries(
+              TICKET_CONFIG.types
+            ).map(
+              ([value, ticket]) => ({
+
+                label: ticket.label,
+
+                description:
+                  ticket.description,
+
+                value: value,
+
+                emoji: ticket.emoji
+
+              })
+            )
+
+          );
+
+
+      const row =
+        new ActionRowBuilder()
+          .addComponents(menu);
+
+
+      /*
+      ----------------------------------------------------------
+      ENVOI DU PANEL
+      ----------------------------------------------------------
+      */
 
       await interaction.channel.send({
-        embeds: [embed],
-        components: [row]
+
+        embeds: [
+          embed
+        ],
+
+        components: [
+          row
+        ]
+
       });
 
-      await interaction.reply({
-        content: '✅ Panneau de tickets créé.',
-        ephemeral: true
-      });
-    }
-  },
-
-
-  // ============================================================
-  // /setticketcategory
-  // ============================================================
-
-  {
-    category: CATEGORY,
-
-    data: new SlashCommandBuilder()
-      .setName('setticketcategory')
-      .setDescription('[Admin] Définir la catégorie d’un type de ticket')
-
-      .addStringOption(option =>
-        option
-          .setName('type')
-          .setDescription('Type de ticket')
-          .setRequired(true)
-          .addChoices(
-            {
-              name: '🛠️ Support',
-              value: 'support'
-            },
-            {
-              name: '💰 Achat',
-              value: 'achat'
-            },
-            {
-              name: '🤝 Partenariat',
-              value: 'partenariat'
-            },
-            {
-              name: '🚨 Signalement',
-              value: 'signalement'
-            }
-          )
-      )
-
-      .addChannelOption(option =>
-        option
-          .setName('categorie')
-          .setDescription('Catégorie Discord du ticket')
-          .addChannelTypes(ChannelType.GuildCategory)
-          .setRequired(true)
-      )
-
-      .setDefaultMemberPermissions(
-        PermissionFlagsBits.ManageGuild
-      ),
-
-    async execute(interaction) {
-
-      const type =
-        interaction.options.getString('type');
-
-      const category =
-        interaction.options.getChannel('categorie');
-
-      const guildData =
-        db.getGuild(interaction.guild.id);
-
-      if (!guildData.ticketCategories) {
-        guildData.ticketCategories = {
-          support: null,
-          achat: null,
-          partenariat: null,
-          signalement: null
-        };
-      }
-
-      guildData.ticketCategories[type] =
-        category.id;
-
-      db.saveGuild(
-        interaction.guild.id,
-        guildData
-      );
-
-      const names = {
-        support: '🛠️ Support',
-        achat: '💰 Achat',
-        partenariat: '🤝 Partenariat',
-        signalement: '🚨 Signalement'
-      };
 
       await interaction.reply({
+
         content:
-          `✅ La catégorie pour **${names[type]}** ` +
-          `est maintenant **${category.name}**.`,
+          '✅ Panneau de tickets créé.',
+
         ephemeral: true
+
       });
+
     }
+
   },
 
 
-  // ============================================================
-  // /setticketlog
-  // ============================================================
+  /*
+  ============================================================
+                    /setticketlog
+  ============================================================
+  */
 
   {
     category: CATEGORY,
 
     data: new SlashCommandBuilder()
       .setName('setticketlog')
-      .setDescription('[Admin] Définir le salon de logs des tickets')
+      .setDescription(
+        '[Admin] Définir le salon de logs des tickets'
+      )
 
       .addChannelOption(option =>
         option
           .setName('salon')
-          .setDescription('Salon de logs')
-          .addChannelTypes(ChannelType.GuildText)
+          .setDescription(
+            'Salon où envoyer les logs'
+          )
+          .addChannelTypes(
+            ChannelType.GuildText
+          )
           .setRequired(true)
       )
 
@@ -222,10 +254,14 @@ module.exports = [
     async execute(interaction) {
 
       const channel =
-        interaction.options.getChannel('salon');
+        interaction.options.getChannel(
+          'salon'
+        );
 
       const guildData =
-        db.getGuild(interaction.guild.id);
+        db.getGuild(
+          interaction.guild.id
+        );
 
       guildData.ticketLogChannel =
         channel.id;
@@ -235,25 +271,36 @@ module.exports = [
         guildData
       );
 
+
       await interaction.reply({
+
         content:
-          `✅ Logs des tickets définis sur ${channel}.`,
+          `✅ Salon de logs défini sur ${channel}.`,
+
         ephemeral: true
+
       });
+
     }
+
   },
 
 
-  // ============================================================
-  // /ticket-close
-  // ============================================================
+  /*
+  ============================================================
+                    /ticket-close
+  ============================================================
+  */
 
   {
     category: CATEGORY,
 
     data: new SlashCommandBuilder()
       .setName('ticket-close')
-      .setDescription('Fermer le ticket actuel')
+      .setDescription(
+        'Fermer le ticket actuel'
+      )
+
       .setDefaultMemberPermissions(
         PermissionFlagsBits.SendMessages
       ),
@@ -263,20 +310,32 @@ module.exports = [
       if (
         !interaction.channel ||
         !interaction.channel.topic ||
-        !interaction.channel.topic.startsWith('ticket-')
+        !interaction.channel.topic.startsWith(
+          'ticket-'
+        )
       ) {
+
         return interaction.reply({
+
           content:
-            '❌ Cette commande ne fonctionne que dans un salon de ticket.',
+            '❌ Cette commande fonctionne uniquement dans un ticket.',
+
           ephemeral: true
+
         });
+
       }
 
-      await require('../handlers/tickets').closeTicket(
+
+      await require(
+        '../handlers/tickets'
+      ).closeTicket(
         interaction,
         client
       );
+
     }
+
   }
 
 ];
