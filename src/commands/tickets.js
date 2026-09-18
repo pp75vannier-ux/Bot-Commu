@@ -3,8 +3,7 @@ const {
   PermissionFlagsBits,
   EmbedBuilder,
   ActionRowBuilder,
-  ButtonBuilder,
-  ButtonStyle,
+  StringSelectMenuBuilder,
   ChannelType
 } = require('discord.js');
 
@@ -14,50 +13,82 @@ const config = require('../config.json');
 const CATEGORY = 'Tickets';
 
 module.exports = [
+
+  // ============================================================
+  // /ticket-panel
+  // ============================================================
+
   {
     category: CATEGORY,
 
     data: new SlashCommandBuilder()
       .setName('ticket-panel')
-      .setDescription('[Admin] Créer le panneau de création de tickets dans ce salon')
+      .setDescription('[Admin] Créer le panneau de création de tickets')
       .addStringOption(option =>
         option
           .setName('titre')
           .setDescription('Titre du panneau')
-          .setRequired(false)
       )
       .addStringOption(option =>
         option
           .setName('description')
           .setDescription('Description du panneau')
-          .setRequired(false)
       )
       .setDefaultMemberPermissions(
         PermissionFlagsBits.ManageGuild
       ),
 
     async execute(interaction) {
+
       const title =
         interaction.options.getString('titre') ||
         '🎫 Support';
 
       const description =
         interaction.options.getString('description') ||
-        'Cliquez sur le bouton ci-dessous pour ouvrir un ticket avec le staff.';
+        'Sélectionnez le type de ticket que vous souhaitez ouvrir.';
 
       const embed = new EmbedBuilder()
         .setColor(config.embedColor)
         .setTitle(title)
         .setDescription(description);
 
+      // ========================================================
+      // MENU DE SELECTION
+      // ========================================================
+
+      const menu = new StringSelectMenuBuilder()
+        .setCustomId('ticket_category')
+        .setPlaceholder('🎫 Sélectionnez votre type de ticket')
+        .addOptions([
+          {
+            label: 'Support',
+            description: 'Besoin d’aide ou problème',
+            value: 'support',
+            emoji: '🛠️'
+          },
+          {
+            label: 'Achat',
+            description: 'Question concernant un achat',
+            value: 'achat',
+            emoji: '💰'
+          },
+          {
+            label: 'Partenariat',
+            description: 'Demande de partenariat',
+            value: 'partenariat',
+            emoji: '🤝'
+          },
+          {
+            label: 'Signalement',
+            description: 'Signaler un problème',
+            value: 'signalement',
+            emoji: '🚨'
+          }
+        ]);
+
       const row = new ActionRowBuilder()
-        .addComponents(
-          new ButtonBuilder()
-            .setCustomId('ticket_create')
-            .setLabel('Ouvrir un ticket')
-            .setStyle(ButtonStyle.Primary)
-            .setEmoji('🎫')
-        );
+        .addComponents(menu);
 
       await interaction.channel.send({
         embeds: [embed],
@@ -71,12 +102,17 @@ module.exports = [
     }
   },
 
+
+  // ============================================================
+  // /setticketcategory
+  // ============================================================
+
   {
     category: CATEGORY,
 
     data: new SlashCommandBuilder()
       .setName('setticketcategory')
-      .setDescription('[Admin] Définir la catégorie d\'un type de ticket')
+      .setDescription('[Admin] Définir la catégorie d’un type de ticket')
 
       .addStringOption(option =>
         option
@@ -106,7 +142,7 @@ module.exports = [
       .addChannelOption(option =>
         option
           .setName('categorie')
-          .setDescription('Catégorie Discord où créer les tickets')
+          .setDescription('Catégorie Discord du ticket')
           .addChannelTypes(ChannelType.GuildCategory)
           .setRequired(true)
       )
@@ -116,6 +152,7 @@ module.exports = [
       ),
 
     async execute(interaction) {
+
       const type =
         interaction.options.getString('type');
 
@@ -152,11 +189,16 @@ module.exports = [
       await interaction.reply({
         content:
           `✅ La catégorie pour **${names[type]}** ` +
-          `est maintenant définie sur **${category.name}**.`,
+          `est maintenant **${category.name}**.`,
         ephemeral: true
       });
     }
   },
+
+
+  // ============================================================
+  // /setticketlog
+  // ============================================================
 
   {
     category: CATEGORY,
@@ -178,6 +220,7 @@ module.exports = [
       ),
 
     async execute(interaction) {
+
       const channel =
         interaction.options.getChannel('salon');
 
@@ -200,6 +243,11 @@ module.exports = [
     }
   },
 
+
+  // ============================================================
+  // /ticket-close
+  // ============================================================
+
   {
     category: CATEGORY,
 
@@ -211,6 +259,7 @@ module.exports = [
       ),
 
     async execute(interaction, client) {
+
       if (
         !interaction.channel ||
         !interaction.channel.topic ||
@@ -229,4 +278,5 @@ module.exports = [
       );
     }
   }
+
 ];
