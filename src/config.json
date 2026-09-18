@@ -1,0 +1,18 @@
+{
+  "embedColor": "#5865F2",
+  "xpPerMessage": { "min": 15, "max": 25 },
+  "xpCooldown": 60000,
+  "levelUpMessage": true,
+  "badWords": [],
+  "maxMentions": 5,
+  "startingBalance": 100,
+  "dailyReward": { "min": 100, "max": 300 },
+  "workReward": { "min": 50, "max": 150 },
+  "workCooldown": 3600000,
+  "dailyCooldown": 86400000,
+  "shopItems": [
+    { "id": "vip", "name": "Rôle VIP (cosmétique)", "price": 5000, "description": "Un badge de prestige dans l'inventaire." },
+    { "id": "coffee", "name": "Café ☕", "price": 50, "description": "Un petit remontant, purement pour le fun." },
+    { "id": "trophy", "name": "Trophée 🏆", "price": 2000, "description": "Pour flexer dans ton inventaire." }
+  ]
+}
